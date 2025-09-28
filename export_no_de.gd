@@ -84,7 +84,6 @@ func choose_arr_add(is_choosed:bool,f:int) -> void:
 #region 编辑数据交互
 #引进输入的值
 func post_input(st:Array) -> void:
-	print("post ",st)
 	if choosed_task_button != []:
 		edit_task(choosed_task_button[-1],st[0],st[1],st[2],st[3],st[4])
 
