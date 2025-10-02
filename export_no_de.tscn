@@ -1,0 +1,485 @@
+[gd_scene load_steps=7 format=3 uid="uid://dexax2ptvrjto"]
+
+[ext_resource type="Script" path="res://addons/exportwithoutdependence/export_no_de.gd" id="1_n48c7"]
+
+[sub_resource type="GDScript" id="GDScript_vnuwn"]
+script/source = "@tool
+extends PanelContainer
+
+var path_main:Dictionary
+var post_arr:Array
+var main_root:Control
+
+signal post_now(what_post:Array)
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	main_root = get_tree().get_first_node_in_group(\"export_root\")
+	path_main = {\"name\":\"\",\"export_path\":\"\",
+	\"files_path\":PackedStringArray([]),
+	\"is_encryt\":false,\"scrt\":''}
+
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+
+
+#region 按键输入
+#接收name
+func _on_name_e_text_changed(new_text):
+	path_main[\"name\"] = new_text
+
+
+func _on_name_e_text_submitted(new_text):
+	path_main[\"name\"] = new_text
+
+
+#接收export_path
+func _on_export_path_e_text_changed(new_text):
+	path_main[\"export_path\"] = new_text
+
+
+func _on_export_path_e_text_submitted(new_text):
+	path_main[\"export_path\"] = new_text
+
+
+#接收files
+func _on_files_edit_text_changed():
+	var new_text:String = %files_edit.text
+	path_main[\"files_path\"] = trans_string_packed(new_text)
+
+#接收files
+func _on_files_edit_text_submitted():
+	var new_text:String = %files_edit.text
+	path_main[\"files_path\"] = trans_string_packed(new_text)
+
+
+func trans_string_packed(s:String) -> PackedStringArray:
+	return PackedStringArray(
+		s.trim_suffix(\",\").split(\",\", false))
+
+
+func _on_encrypt_toggled(toggled_on):
+	path_main[\"is_encryt\"]  = toggled_on
+
+#接收secret
+func _on_scrt_e_text_changed(new_text):
+	path_main[\"scrt\"] = new_text
+
+func _on_scrt_e_text_submitted(new_text):
+	path_main[\"scrt\"] = new_text
+
+
+#endregion
+
+#加载缓存
+func load_temp() -> void:
+	path_main = {\"name\":%nameE.text,\"export_path\":%export_pathE.text,
+	\"files_path\":PackedStringArray(
+		%files_edit.text.trim_suffix(\",\").split(\",\", false)),
+	\"is_encryt\":%encrypt.button_pressed,\"scrt\":%scrtE.text}
+
+#清空缓存并重置编辑器
+func clear_temp() -> void:
+	path_main = {\"name\":\"\",\"export_path\":\"\",
+	\"files_path\":PackedStringArray([]),
+	\"is_encryt\":false,\"scrt\":''}
+	%nameE.text = \"\"
+	%export_pathE.text = \"\"
+	%files_edit.text = \"\"
+	%encrypt.button_pressed = false
+	%scrtE.text = \"\"
+
+##数据输入完毕发射
+func main_post() -> void:
+	for i in path_main:
+		post_arr.append(path_main[i])
+	if not post_now.is_connected(main_root.post_input):
+		post_now.connect(main_root.post_input)
+	emit_signal(\"post_now\",post_arr)
+	post_arr = []
+
+#确认则发射
+func _on_confirm_pressed():
+	load_temp()
+	main_post()
+
+
+func _on_quit_pressed():
+	clear_temp()
+"
+
+[sub_resource type="GDScript" id="GDScript_n4lhh"]
+script/source = "@tool
+extends Button
+const filter1:PackedStringArray = [\"*.pck\"]
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+
+
+func _on_pressed():
+	%Fileopen.set_meta(\"path1\",true)
+	%Fileopen.file_mode = 2
+	%Fileopen.access = 2
+	%Fileopen.filters = filter1
+	%Fileopen.visible = true
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_scm4n"]
+script/source = "@tool
+extends LineEdit
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+
+
+func _on_fileopen_dir_selected(dir):
+	if %Fileopen.get_meta(\"path1\"):
+		text = dir
+"
+
+[sub_resource type="GDScript" id="GDScript_cl314"]
+script/source = "@tool
+extends CheckButton
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+
+
+func _on_toggled(toggled_on):
+	match toggled_on:
+		true:
+			%scrtE.editable = true
+		false:%scrtE.editable = false
+"
+
+[sub_resource type="GDScript" id="GDScript_vw2l0"]
+script/source = "@tool
+extends TextEdit
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+
+#接收filedialog
+func under_files(paths:PackedStringArray) -> void:
+	for i in paths:
+		text += i + \",\"
+
+func under_folder(folder:String) -> void:
+	var zip:PackedStringArray = get_all_files(folder)
+	for i in zip:
+		text += i + \",\"
+
+func get_all_files(path: String) -> PackedStringArray:
+	var file_list: PackedStringArray = []
+	_scan_directory(path, file_list)
+	return file_list
+
+# 内部递归函数
+func _scan_directory(current_path: String, file_list: PackedStringArray) -> void:
+	var dir = DirAccess.open(current_path)
+	# 检查目录是否成功打开
+	if dir == null:
+		push_error(\"无法打开目录: \" + current_path)
+		return
+	# 开始遍历目录内容
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != \"\":
+		# 忽略特殊目录 \".\" 和 \"..\"
+		if file_name == \".\" or file_name == \"..\":
+			file_name = dir.get_next()
+			continue
+		# 忽略import文件
+		if file_name.get_extension() == \"import\":
+			file_name = dir.get_next()
+			continue
+		# 构建当前项目的完整路径
+		var full_path = current_path.path_join(file_name)
+		# 判断是目录还是文件
+		if dir.current_is_dir():
+			# 如果是目录，则递归调用自身
+			_scan_directory(full_path, file_list)
+		else:
+			# 如果是文件，则添加到列表
+			file_list.append(full_path)
+		file_name = dir.get_next()
+
+	# 结束遍历
+	dir.list_dir_end()
+"
+
+[node name="ExportNoDe" type="Control" groups=["export_root"]]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_n48c7")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VSplitContainer" type="VSplitContainer" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+split_offset = 100
+
+[node name="HSplitContainer" type="HSplitContainer" parent="PanelContainer/MarginContainer/VSplitContainer"]
+layout_mode = 2
+
+[node name="add_task" type="PanelContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="VSplitContainer" type="VSplitContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="add" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 15
+text = "add"
+
+[node name="delete" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 15
+text = "delete"
+
+[node name="tasks_Scroll" type="ScrollContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer"]
+layout_mode = 2
+
+[node name="tasks_VBox" type="VBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/tasks_Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="path" type="PanelContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+script = SubResource("GDScript_vnuwn")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path"]
+layout_mode = 2
+
+[node name="name" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/name"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Task Name"
+
+[node name="nameE" type="LineEdit" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/name"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+expand_to_text_length = true
+
+[node name="export_path" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Export Path"
+
+[node name="export_b" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "browse"
+script = SubResource("GDScript_n4lhh")
+
+[node name="export_pathE" type="LineEdit" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+expand_to_text_length = true
+script = SubResource("GDScript_scm4n")
+
+[node name="crty" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Encryption"
+
+[node name="encrypt" type="CheckButton" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "is encryt"
+script = SubResource("GDScript_cl314")
+
+[node name="scrtE" type="LineEdit" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+editable = false
+expand_to_text_length = true
+
+[node name="confirmH" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 50
+
+[node name="confirm" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/confirmH"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "confirm"
+
+[node name="quit" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/confirmH"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "quit"
+
+[node name="files" type="VSplitContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="file_path" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/file_path"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Files"
+
+[node name="files_b" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/file_path"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "browse"
+
+[node name="open_pos" type="Label" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/file_path"]
+layout_mode = 2
+text = "Open Folder or Files"
+
+[node name="files_option" type="OptionButton" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/file_path"]
+layout_mode = 2
+item_count = 2
+selected = 1
+allow_reselect = true
+popup/item_0/text = "folder"
+popup/item_0/id = 0
+popup/item_1/text = "files"
+popup/item_1/id = 1
+
+[node name="ScrollContainer" type="PanelContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files"]
+custom_minimum_size = Vector2(200, 300)
+layout_mode = 2
+
+[node name="files_edit" type="TextEdit" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+wrap_mode = 1
+script = SubResource("GDScript_vw2l0")
+
+[node name="CenterContainer" type="CenterContainer" parent="PanelContainer/MarginContainer/VSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="export_all" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/CenterContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "export all"
+
+[node name="export_selected" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/CenterContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "export selected"
+
+[node name="save" type="Button" parent="PanelContainer/MarginContainer/VSplitContainer/CenterContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "save preset"
+
+[node name="Fileopen" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open File(s)"
+initial_position = 2
+size = Vector2i(400, 700)
+min_size = Vector2i(400, 700)
+ok_button_text = "打开"
+dialog_hide_on_ok = true
+file_mode = 1
+metadata/path1 = false
+
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/HBoxContainer/add" to="." method="_on_add_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/HBoxContainer/delete" to="." method="_on_delete_pressed"]
+[connection signal="toggled" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/tasks_Scroll/tasks_VBox/Button" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/tasks_Scroll/tasks_VBox/Button" method="_on_toggled"]
+[connection signal="text_changed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/name/nameE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_name_e_text_changed"]
+[connection signal="text_submitted" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/name/nameE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_name_e_text_submitted"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_b" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_b" method="_on_pressed"]
+[connection signal="text_changed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_pathE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_export_path_e_text_changed"]
+[connection signal="text_submitted" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_pathE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_export_path_e_text_submitted"]
+[connection signal="toggled" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty/encrypt" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_encrypt_toggled"]
+[connection signal="toggled" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty/encrypt" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty/encrypt" method="_on_toggled"]
+[connection signal="text_changed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty/scrtE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_scrt_e_text_changed"]
+[connection signal="text_submitted" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/crty/scrtE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_scrt_e_text_submitted"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/confirmH/confirm" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_confirm_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/confirmH/quit" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_quit_pressed"]
+[connection signal="text_changed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/ScrollContainer/files_edit" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_files_edit_text_changed"]
+[connection signal="text_set" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/ScrollContainer/files_edit" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_files_edit_text_submitted"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/CenterContainer/HBoxContainer/export_all" to="." method="_on_export_all_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/CenterContainer/HBoxContainer/export_selected" to="." method="_on_export_selected_pressed"]
+[connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/CenterContainer/HBoxContainer/save" to="." method="_on_save_pressed"]
+[connection signal="dir_selected" from="Fileopen" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_pathE" method="_on_fileopen_dir_selected"]
