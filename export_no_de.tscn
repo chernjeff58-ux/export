@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://dexax2ptvrjto"]
 
-[ext_resource type="Script" path="res://addons/exportwithoutdependence/export_no_de.gd" id="1_n48c7"]
+[ext_resource type="Script" uid="uid://bfv2wtu7t0kd0" path="res://addons/exportwithoutdependence/export_no_de.gd" id="1_n48c7"]
 
 [sub_resource type="GDScript" id="GDScript_vnuwn"]
 script/source = "@tool
@@ -225,6 +225,10 @@ func _scan_directory(current_path: String, file_list: PackedStringArray) -> void
 		if file_name.get_extension() == \"import\":
 			file_name = dir.get_next()
 			continue
+		# 忽略depren文件
+		if file_name.get_extension() == \"depren\":
+			file_name = dir.get_next()
+			continue
 		# 构建当前项目的完整路径
 		var full_path = current_path.path_join(file_name)
 		# 判断是目录还是文件
@@ -304,11 +308,13 @@ layout_mode = 2
 
 [node name="TabContainer" type="TabContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer"]
 layout_mode = 2
+current_tab = 0
 
 [node name="path" type="PanelContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 script = SubResource("GDScript_vnuwn")
+metadata/_tab_index = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path"]
 layout_mode = 2
@@ -389,6 +395,7 @@ text = "quit"
 [node name="files" type="VSplitContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer"]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 1
 
 [node name="file_path" type="HBoxContainer" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files"]
 layout_mode = 2
@@ -410,9 +417,9 @@ text = "Open Folder or Files"
 
 [node name="files_option" type="OptionButton" parent="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/files/file_path"]
 layout_mode = 2
-item_count = 2
 selected = 1
 allow_reselect = true
+item_count = 2
 popup/item_0/text = "folder"
 popup/item_0/id = 0
 popup/item_1/text = "files"
