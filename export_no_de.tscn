@@ -229,6 +229,10 @@ func _scan_directory(current_path: String, file_list: PackedStringArray) -> void
 		if file_name.get_extension() == \"depren\":
 			file_name = dir.get_next()
 			continue
+		# 忽略uid文件
+		if file_name.get_extension() == \"uid\":
+			file_name = dir.get_next()
+			continue
 		# 构建当前项目的完整路径
 		var full_path = current_path.path_join(file_name)
 		# 判断是目录还是文件
@@ -472,7 +476,6 @@ metadata/path1 = false
 
 [connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/HBoxContainer/add" to="." method="_on_add_pressed"]
 [connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/HBoxContainer/delete" to="." method="_on_delete_pressed"]
-[connection signal="toggled" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/tasks_Scroll/tasks_VBox/Button" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/add_task/VSplitContainer/tasks_Scroll/tasks_VBox/Button" method="_on_toggled"]
 [connection signal="text_changed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/name/nameE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_name_e_text_changed"]
 [connection signal="text_submitted" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/name/nameE" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path" method="_on_name_e_text_submitted"]
 [connection signal="pressed" from="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_b" to="PanelContainer/MarginContainer/VSplitContainer/HSplitContainer/TabContainer/path/VBoxContainer/export_path/export_b" method="_on_pressed"]
